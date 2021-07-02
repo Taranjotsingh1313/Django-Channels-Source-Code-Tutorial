@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}Chat{% endblock title %}
+{% block body %}
+<div class="container d-flex justify-content-around flex-column " style="height:100vh">
+<h1 class="text-center text-success">P-Chat</h1>
+    <div class="chat flex-column justify-content-between" style="overflow-y:scroll;height:70%;">
+      
+        
+    </div>
+    <input type="text" placeholder="message" id="message" class="form-control">
+    <button class="btn btn-outline-success">Send</button>
+    <h2 id="warning"></h2>
+</div>
+{% endblock body %}
+{% block script %}
+    <script>
+        let con = false;
+        const ws = new WebSocket('ws://127.0.0.1:8000/ws/chat/');
+        ws.addEventListener('open',() =>{
+            console.log("Opened")
+            con = true;
+            ws.send(JSON.stringify({
+                'command':'join',
+                'groupname':'publicchat'
+            }))
+        })
+        const button = document.querySelector("button");
+        button.addEventListener("click",() =>{
+            if (con){
+                const message = document.getElementById("message").value;
+                ws.send(JSON.stringify({
+                    'command':'send',
+                    'message':message
+                }))
+            }
+            else{
+                console.log('Not')
+            }
+
+        })
+        ws.onmessage = (e) =>{
+            console.log(e)
+            const data1 = JSON.parse(e.data)
+            console.log(data1)
+            if(data1.warning){
+                const h2w = document.getElementById("warning")
+                h2w.innerText = 'PLEASE LOGIN TO CHAT'
+            }
+            else if(data1.message){
+                   const mesage = `
+                      <div class="messages d-flex flex-column">
+                     <h5 class="username text-primary">${data1.user}</h5>
+                     <h6 class="message-chat text-success">${data1.message}</h6>
+                    </div>
+                `
+                const chat = document.getElementsByClassName("chat")[0];
+                chat.innerHTML += mesage;
+            }
+        }
+    </script>
+{% endblock script %}
